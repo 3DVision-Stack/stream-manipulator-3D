@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>rqt_stream_manipulator_3d</name>
+  <version>0.0.1</version>
+  <description>
+      The rqt_stream_manipulator_3d provides a GUI to the stream_manipulator_3d
+      package, in order to dynamically reconfigure it.
+  </description>
+
+  <maintainer email="fspinelli@gmail.com">tabjones</maintainer>
+  <author email="fspinelli@gmail.com">tabjones</author>
+  <license>BSD</license>
+  <url type="repository">https://github.com/3DVision-Stack/stream-manipulator-3D</url>
+  <url type="bugtracker">https://github.com/3DVision-Stack/stream-manipulator-3D/issues</url>
+
+  <!-- Use buildtool_depend for build tool packages: either catkin or cmake-->
+  <!-- Use build_depend for packages you need at compile time: -->
+  <!-- Use exec_depend for packages you need when executing the package: -->
+  <!-- Use depend as alias for build_depend and exec_depend -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>pluginlib</depend>
+  <depend>roscpp</depend>
+  <depend>rqt_gui</depend>
+  <depend>rqt_gui_cpp</depend>
+  <depend>roslib</depend>
+  <depend>cmake_modules</depend>
+  <depend>stream_manipulator_3d</depend>
+
+  <export>
+      <rqt_gui plugin="${prefix}/rqt_plugin.xml"/>
+      <rqt_stream_manipulator_3d plugin="${prefix}/plugins.xml"/>
+  </export>
+</package>

@@ -1,0 +1,19 @@
+<library path="lib/librqt_stream_manipulator_3d">
+    <class name="rqt_stream_manipulator_3d/StreamManipulator" type="rqt_sm3d::StreamManipulator" base_class_type="rqt_gui_cpp::Plugin">
+    <description>
+      A C++ GUI plugin for the stream_manipulator_3d package.
+    </description>
+    <qtgui>
+      <group>
+        <label>Configuration</label>
+        <icon type="theme">folder</icon>
+        <statustip>Plugins related to configuration.</statustip>
+      </group>
+      <label>Stream Manipulator 3D</label>
+      <icon type="theme">text-x-generic</icon>
+      <statustip>
+          A C++ GUI plugin for the stream_manipulator_3d package.
+      </statustip>
+    </qtgui>
+  </class>
+</library>

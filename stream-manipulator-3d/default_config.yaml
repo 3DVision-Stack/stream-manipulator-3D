@@ -1,0 +1,7 @@
+disabled: false
+input_topic: "/camera/depth_registered/points"
+chain_description:
+        [
+        "TestCropBox, filter/cropbox",
+        "TestPublisher, output/publisher"
+        ]

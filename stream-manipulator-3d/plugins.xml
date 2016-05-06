@@ -1,0 +1,17 @@
+<library path="lib/libfilter_plugins">
+    <class name="filter/cropbox" type="sm3d::filters::CropBox"
+        base_class_type="sm3d::Plugin">
+        <description>
+            Wrapping of pcl::CropBox filter. Removes everything inside/outside
+            a box.
+        </description>
+    </class>
+</library>
+<library path="lib/liboutput_plugins">
+    <class name="output/publisher" type="sm3d::output::Publisher"
+        base_class_type="sm3d::Plugin">
+        <description>
+            Outputs stream to a topic of your choice.
+        </description>
+    </class>
+</library>

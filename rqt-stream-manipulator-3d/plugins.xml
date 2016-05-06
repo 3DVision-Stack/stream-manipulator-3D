@@ -1,0 +1,14 @@
+<library path="lib/librqt_sm3d_plugins">
+    <class name="filter/cropbox" type="rqt_sm3d::filters::CropBox"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d filters/cropbox Plugin
+        </description>
+    </class>
+    <class name="output/publisher" type="rqt_sm3d::output::Publisher"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d output/publisher Plugin
+        </description>
+    </class>
+</library>

@@ -330,7 +330,6 @@ namespace rqt_sm3d
                 chain_description->push_back(boost::move(desc));
             }
             *chain_changed = true;
-            shm.condition.notify_one(); //let ROS node build the chain of plugins
         }
         //Here we asyncronously continue to assemble the Guis
         addTabs(names);

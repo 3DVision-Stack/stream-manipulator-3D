@@ -52,16 +52,19 @@ set(PLUGIN_LIBRARY rqt_sm3d_plugins)
 
 set(PLUGIN_LIBRARY_HDR
     include/rqt_stream_manipulator_3d/filters/cropbox.h
+    include/rqt_stream_manipulator_3d/filters/voxel_grid.h
     include/rqt_stream_manipulator_3d/output/publisher.h
     )
 
 set(PLUGIN_LIBRARY_SRC
     src/filters/cropbox.cpp
+    src/filters/voxel_grid.cpp
     src/output/publisher.cpp
     )
 
 set(PLUGIN_LIBRARY_UI
     src/filters/cropbox.ui
+    src/filters/voxel_grid.ui
     src/output/publisher.ui
     )
 

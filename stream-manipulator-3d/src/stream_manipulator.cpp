@@ -31,6 +31,7 @@
 #include <stream_manipulator_3d/stream_manipulator.h>
 #include <boost/algorithm/string/trim.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/range/algorithm/copy.hpp>
 #include <boost/bind.hpp>
 
 namespace sm3d
@@ -48,6 +49,7 @@ StreamManipulator::deInit()
     //Process is stopped so clean the chain
     marks.reset();
     input.reset();
+    output.reset();
     chain.clear(); //this cleans all the plugins
     sub->kill();
     sub.reset();
@@ -63,7 +65,8 @@ StreamManipulator::init()
         ROS_ERROR("[StreamManipulator::%s] NodeHandle not initialized, must call spawn() first!",__func__);
         return;
     }
-    input = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB> >();
+    input = boost::make_shared<PTC>();
+    output = boost::make_shared<PTC>();
     pub_markers = nh->advertise<visualization_msgs::MarkerArray>("markers", 1);
     marks = boost::make_shared<visualization_msgs::MarkerArray>();
     sub = boost::make_shared<Subscriber>(getPrivNodeHandle(), "subscriber");
@@ -260,24 +263,10 @@ StreamManipulator::init()
 /*             dest->push_back(source->points[i]); */
 /*     } */
 /* } */
-bool
-StreamManipulator::checkChain()
+inline bool
+StreamManipulator::checkChain() const
 {
-    ShmHandler::NamedLock lock(shm.mutex);
-    using namespace ::boost::posix_time;
-    //interprocess condition variable needs absolute time in UTC.
-    //No need to loop-wrap this, since function is already executed in a loop
-    if (shm.condition.timed_wait(lock, //lock to wait
-            ptime(microsec_clock::universal_time() + milliseconds(50)), //timeout
-            boost::bind(&StreamManipulator::chainPred, this)) ) //predicate evaluation
-    {
-        //someone notified during the wait, or chain_changed was set before the wait
-        *chain_changed = false;
-        return true;
-    }
-    else
-        //nothing new
-        return false;
+    return *chain_changed;
 }
 
 void
@@ -285,38 +274,62 @@ StreamManipulator::assembleChain()
 {
     if (!nh)
         return;
+    std::vector<sm3d::Plugin::Ptr> tmp_chain;
     //Lock the chain from processing thread
     Lock local(mtx_chain);
-    //assemble the chain
+    //make a backup copy
+    boost::copy(chain, std::back_inserter(tmp_chain));
     chain.clear();
     //have to lock also shared memory mutex for reading chain_description
-    std::vector<std::string>  desc_complete;
+    ShmHandler::NamedLock lock(shm.mutex);
+    chain.resize(chain_description->size());
+    //keep a record of wrong lines, to remove them from description
+    std::vector<std::size_t> wrongs;
+    for (std::size_t i=0; i<chain_description->size(); ++i)
     {
-        //Make a local copy to release the lock as fast as possible
-        ShmHandler::NamedLock lock(shm.mutex);
-        for (size_t i=0; i<chain_description->size(); ++i)
-            desc_complete.push_back(chain_description->at(i).c_str());
-    }
-    chain.resize(desc_complete.size());
-    for (size_t i=0; i<desc_complete.size(); ++i)
-    {
+        std::string line = chain_description->at(i).c_str();
+        boost::trim(line);
         std::vector<std::string> desc;
-        boost::split(desc, desc_complete[i], boost::is_any_of(","), boost::token_compress_on);
+        boost::split(desc, line, boost::is_any_of(","), boost::token_compress_on);
         if (desc.size() != 2){
-            ROS_ERROR("[StreamManipulator::%s] Chain description is malformed: %s\nShould be 'customName,pluginName'\nSkipping this Plugin",__func__,desc_complete[i].c_str());
+            ROS_ERROR("[StreamManipulator::%s] Chain description line is malformed: %s\nShould be 'customName,pluginName'\nSkipping this Plugin",__func__,line.c_str());
+            wrongs.push_back(i);
             continue;
         }
         boost::trim(desc[0]);
         boost::trim(desc[1]);
-        if (plugin_loader.isClassAvailable(desc[1])){
-            chain[i] = plugin_loader.createInstance(desc[1]);
-            chain[i]->init(desc[0], getNodeHandle(), getPrivNodeHandle());
+        //Find if the Plugin was already present in old chain, in that case, copy it
+        std::vector<std::string>::iterator pos  = std::find(
+                old_chain_desc.begin(), old_chain_desc.end(), line);
+        if (pos != old_chain_desc.end()){
+            //Plugin was found, copy it from old chain
+            chain[i] = tmp_chain.at(pos - old_chain_desc.begin());
         }
         else{
-            ROS_ERROR("[StreamManipulator::%s] Attempted to load %s Plugin, but it does not exists...",__func__,desc[1].c_str());
-            continue;
+            //Plugin not found create it from scratch
+            if (plugin_loader.isClassAvailable(desc[1])){
+                chain[i] = plugin_loader.createInstance(desc[1]);
+                chain[i]->init(desc[0], getNodeHandle(), getPrivNodeHandle());
+            }
+            else{
+                ROS_ERROR("[StreamManipulator::%s] Attempted to load %s Plugin, but it does not exists...",__func__,desc[1].c_str());
+                wrongs.push_back(i);
+                continue;
+            }
         }
     }
+    //Remove wrong entries
+    for (std::size_t i=0; i<wrongs.size(); ++i)
+    {
+        ShmHandler::StrVector::iterator wrong = chain_description->begin() + (wrongs[i] -i);
+        chain_description->erase(wrong);
+    }
+    //reset chain changed
+    *chain_changed = false;
+    //save description for next iteration
+    old_chain_desc.clear();
+    for (std::size_t i=0; i<chain_description->size(); ++i)
+        old_chain_desc.push_back(chain_description->at(i).c_str());
     marks.reset();
     ROS_INFO("[StreamManipulator::%s] Chain assembled",__func__);
 }
@@ -326,17 +339,22 @@ StreamManipulator::process()
 {
     if (!nh)
         return;
-    //Wait for a new cloud on stream, block here until a cloud arrives or timeout
+    if (!sub->isRunning())
+        return;
+    //Copy cloud on stream, but wait for it
     {
         boost::unique_lock<boost::mutex> lock(*mtx_stream_ptr);
         using namespace ::boost::posix_time;
+        boost::system_time const timeout = boost::get_system_time() + boost::posix_time::milliseconds(20);
+        //This version of timed_wait includes a loop, so we don't worry about spurious wakeups
         if (cv_ptr->timed_wait(lock, //lock to wait
-                    ptime(microsec_clock::universal_time() + milliseconds(50)), //timeout
+                    timeout, //timeout
                     boost::bind(&StreamManipulator::streamPred, this)) ) //predicate evaluation
         {
             //someone notified during the wait, or predicate was set before the wait
             *new_cloud_in_stream = false;
-            pcl::copyPointCloud(*(sub->stream), *input);
+            input = sub->stream;
+            sub->stream.reset();
             frame_id = input->header.frame_id;
         }
         else
@@ -352,187 +370,14 @@ StreamManipulator::process()
     Lock local(mtx_chain);
     for (ChainIter it=chain.begin(); it!=chain.end(); ++it)
     {
-        PTC::Ptr output = boost::make_shared<PTC>();
-        (*it)->apply(input,output);
-        if (it != chain.end()-1)
-            input = output;
+        output = boost::make_shared<PTC>();
+        std::cout<<it - chain.begin() <<":a) in "<<input->size()<<" out "<<output->size()<<std::endl<<std::flush;
+        (*it)->apply(input,*output);
+        std::cout<<it - chain.begin() <<":b) in "<<input->size()<<" out "<<output->size()<<std::endl<<std::flush;
+        input = output;
     }
 }
-    /* bool crop, downsamp, segment, outliers, color; */
-    /* config->get("cropping", crop); */
-    /* config->get("downsampling", downsamp); */
-    /* config->get("segmenting", segment); */
-    /* config->get("outliers_filter", outliers); */
-    /* config->get("color_filter", color); */
-    /* // if (color && !was_color_filtering){ */
-    /* //     //we compute a new color model */
-    /* //     PTC::Ptr last_processed_scene; */
-    /* //     storage->readSceneProcessed(last_processed_scene); */
-    /* //     extract_principal_color(last_processed_scene); */
-    /* // } */
-    /* // was_color_filtering = color; */
-    /* PTC::Ptr tmp = boost::make_shared<PTC>(); */
-    /* PTC::Ptr dest; */
-    /* if (crop){ */
-    /*     Box lim; */
-    /*     bool org; */
-    /*     config->get("filter_limits", lim); */
-    /*     config->get("keep_organized", org); */
-    /*     std::string  ref_frame, box_frame; */
-    /*     config->get("cropping_ref_frame", box_frame); */
-    /*     storage->readSensorFrame(ref_frame); */
-    /*     if (ref_frame.compare(box_frame)!=0) */
-    /*         crop_a_box(source, dest, lim, false, box_transform.inverse(), org); */
-    /*     else */
-    /*         crop_a_box(source, dest, lim, false, Eigen::Matrix4f::Identity(), org); */
-    /*     if(dest->empty()) */
-    /*         return; */
-    /* } */
-    /* //check if we need to downsample scene */
-    /* if (downsamp){ */
-    /*     if (dest){ */
-    /*         //means we have performed at least one filter before this */
-    /*         downsamp_scene(dest, tmp); */
-    /*         dest = tmp; */
-    /*         tmp = boost::make_shared<PTC>(); */
-    /*     } */
-    /*     else */
-    /*         downsamp_scene(source, dest); */
-    /*     if(dest->empty()) */
-    /*         return; */
-    /* } */
-    /* //check if we need the plane segmentation */
-    /* if (segment){ */
-    /*     if (dest){ */
-    /*         //means we have performed at least one filter before this */
-    /*         segment_scene(dest, tmp); */
-    /*         dest = tmp; */
-    /*         tmp = boost::make_shared<PTC>(); */
-    /*     } */
-    /*     else */
-    /*         segment_scene(source, dest); */
-    /*     if(dest->empty()) */
-    /*         return; */
-    /* } */
-    /* //check if we need to apply a color filter */
-    /* if (color){ */
-    /*     if (dest){ */
-    /*         //means we have performed at least one filter before this */
-    /*         apply_color_filter(dest, tmp); */
-    /*         dest = tmp; */
-    /*         tmp = boost::make_shared<PTC>(); */
-    /*     } */
-    /*     else */
-    /*         apply_color_filter(source, dest); */
-    /*     if(dest->empty()) */
-    /*         return; */
-    /* } */
-    /* //check if we need to remove outliers */
-    /* if (outliers){ */
-    /*     if (dest){ */
-    /*         //means we have performed at least one filter before this */
-    /*         remove_outliers(dest, tmp); */
-    /*         dest = tmp; */
-    /*         tmp = boost::make_shared<PTC>(); */
-    /*     } */
-    /*     else */
-    /*         remove_outliers(source, dest); */
-    /*     if(dest->empty()) */
-    /*         return; */
-    /* } */
-    /* //Add vito cropping when listener is active */
-    /* //crop arms if listener is active and user requested it */
-/* #ifdef PACV_LISTENER_SUPPORT */
-    /* std::shared_ptr<std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>> trans; */
-    /* bool val; */
-    /* double scale; */
-    /* if (!list_config){ */
-    /*     ROS_ERROR("[BasicNode::%s]\tNo Listener Config set, set it with setListenerConfig()",__func__); */
-    /*     return; */
-    /* } */
-    /* list_config->get("spawn", val); */
-    /* if (val){ */
-    /*     list_config->get("geometry_scale", scale); */
-    /*     list_config->get("remove_right_arm", val); */
-    /*     if (val){ */
-    /*         if(storage->readRightArm(trans)) */
-    /*             if (trans->size() == lwr_arm.size() ) */
-    /*                 for(size_t i=0; i<trans->size(); ++i) */
-    /*                 { */
-    /*                     if (dest){ */
-    /*                         crop_a_box(dest, tmp, lwr_arm[i]*scale, true, trans->at(i).inverse()); */
-    /*                         dest = tmp; */
-    /*                         tmp = boost::make_shared<PTC>(); */
-    /*                     } */
-    /*                     else */
-    /*                         crop_a_box(source, dest, lwr_arm[i]*scale, true, trans->at(i).inverse()); */
-    /*                 } */
-    /*     } */
-    /*     list_config->get("remove_left_arm", val); */
-    /*     if (val){ */
-    /*         if(storage->readLeftArm(trans)) */
-    /*             if (trans->size() == lwr_arm.size() ) */
-    /*                 for(size_t i=0; i<trans->size(); ++i) */
-    /*                 { */
-    /*                     if (dest){ */
-    /*                         crop_a_box(dest, tmp, lwr_arm[i]*scale, true, trans->at(i).inverse()); */
-    /*                         dest = tmp; */
-    /*                         tmp = boost::make_shared<PTC>(); */
-    /*                     } */
-    /*                     else */
-    /*                         crop_a_box(source, dest, lwr_arm[i]*scale, true, trans->at(i).inverse()); */
-    /*                 } */
-    /*     } */
-    /*     list_config->get("remove_right_hand", val); */
-    /*     if (val){ */
-    /*         if(storage->readRightHand(trans)) */
-    /*             if (trans->size() == soft_hand_right.size() ) */
-    /*                 for(size_t i=0; i<trans->size(); ++i) */
-    /*                 { */
-    /*                     if (dest){ */
-    /*                         crop_a_box(dest, tmp, soft_hand_right[i]*scale, true, trans->at(i).inverse()); */
-    /*                         dest = tmp; */
-    /*                         tmp = boost::make_shared<PTC>(); */
-    /*                     } */
-    /*                     else */
-    /*                         crop_a_box(source, dest, soft_hand_right[i]*scale, true, trans->at(i).inverse()); */
-    /*                 } */
-    /*     } */
-    /*     list_config->get("remove_left_hand", val); */
-    /*     if (val){ */
-    /*         if(storage->readLeftHand(trans)) */
-    /*             if (trans->size() == soft_hand_left.size() ) */
-    /*                 for(size_t i=0; i<trans->size(); ++i) */
-    /*                 { */
-    /*                     if (dest){ */
-    /*                         crop_a_box(dest, tmp, soft_hand_left[i]*scale, true, trans->at(i).inverse()); */
-    /*                         dest = tmp; */
-    /*                         tmp = boost::make_shared<PTC>(); */
-    /*                     } */
-    /*                     else */
-    /*                         crop_a_box(source, dest, soft_hand_left[i]*scale, true, trans->at(i).inverse()); */
-    /*                 } */
-    /*     } */
-    /* } */
-/* #endif */
-    /* //Save into storage */
-    /* if (dest){ */
-    /*     if(!dest->empty()){ */
-    /*         pcl::copyPointCloud(*dest, *scene_processed); */
-    /*         std::string frame; */
-    /*         storage->readSensorFrame(frame); */
-    /*         scene_processed->header.frame_id = frame; */
-    /*         storage->writeSceneProcessed(scene_processed); */
-    /*     } */
-    /* } */
-    /* else{ */
-    /*     pcl::copyPointCloud(*source, *scene_processed); */
-    /*     std::string frame; */
-    /*     storage->readSensorFrame(frame); */
-    /*     scene_processed->header.frame_id = frame; */
-    /*     storage->writeSceneProcessed(scene_processed); */
-    /* } */
-/* } */
+
 void
 StreamManipulator::publishMarkers() const
 {

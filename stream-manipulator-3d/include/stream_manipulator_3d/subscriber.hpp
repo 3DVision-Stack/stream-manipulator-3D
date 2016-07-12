@@ -58,7 +58,6 @@ class Subscriber: public ROSNode<Subscriber>
         //init/deinit
         void init()
         {
-            stream = boost::make_shared<pcl::PointCloud<pcl::PointXYZRGB> >();
             old_topic.clear();
             input_topic.clear();
             ROS_INFO("[%s::%s] Initialization complete",nh->getUnresolvedNamespace().c_str(),__func__);
@@ -72,6 +71,7 @@ class Subscriber: public ROSNode<Subscriber>
         void cb_stream(const sensor_msgs::PointCloud2::ConstPtr &msg)
         {
             boost::unique_lock<boost::mutex> lock(*mtx_stream_ptr);
+            stream = boost::make_shared<PTC>();
             pcl::fromROSMsg (*msg, *stream);
             *new_cloud_in_stream = true;
             cv_ptr->notify_one();
@@ -83,7 +83,7 @@ class Subscriber: public ROSNode<Subscriber>
                 if (input_topic.compare(old_topic) != 0){
                     //Topic changed, resubscribe
                     old_topic = input_topic;
-                    stream_sub = nh->subscribe(nh->resolveName(old_topic),0,&Subscriber::cb_stream, this);
+                    stream_sub = nh->subscribe(nh->resolveName(old_topic),5,&Subscriber::cb_stream, this);
                     ROS_INFO("[%s::%s] Subscribed to %s",nh->getUnresolvedNamespace().c_str(),
                             __func__, nh->resolveName(old_topic).c_str());
                 }

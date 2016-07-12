@@ -28,26 +28,26 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#ifndef _OUTPUT_PUBLISHER_HPP_
-#define _OUTPUT_PUBLISHER_HPP_
+#ifndef _FILTERS_VOXEL_GRID_HPP_
+#define _FILTERS_VOXEL_GRID_HPP_
 
 #include <stream_manipulator_3d/plugin.hpp>
-#include <stream_manipulator_3d/output/config/publisher_config.hpp>
-#include <stream_manipulator_3d/common_pcl.h>
+#include <stream_manipulator_3d/filters/config/voxel_grid_config.hpp>
+#include <pcl/filters/voxel_grid.h>
 
 namespace sm3d
 {
-namespace output
+namespace filters
 {
-///Publisher of streams.
-class Publisher : public sm3d::Plugin
+///VoxelGrid Filter, wrapping pcl one.
+class VoxelGrid : public sm3d::Plugin
 {
     public:
-        virtual ~Publisher()
+        virtual ~VoxelGrid()
         {
             clean();
         }
-        Publisher() : Plugin()
+        VoxelGrid() : Plugin()
         {
         }
         ///initialize function
@@ -57,28 +57,38 @@ class Publisher : public sm3d::Plugin
             setNodeHandle(name, father_nh, priv_nh);
             //Then do our specific configuration
             //Create config in shared_memory
-            config = shm.segment.construct<PublisherConfig>((name_+"Config").c_str())(shm.char_alloc);
+            config = shm.segment.construct<VoxelGridConfig>((name_+"Config").c_str())();
 
             //Lock the mutex to create parameters in shared memory (and in Rosparams)
             ShmHandler::Lock  lock(config->mtx);
 
-            //////////////Init Parameters///////////////////////////////////////
-            if (nh_->hasParam("output_topic")){
-                nh_->getParam("output_topic", topic);
-                config->output_topic = topic.c_str();
-            }
-            else{
-                nh_->setParam("output_topic", config->output_topic.c_str());
-                topic = config->output_topic.c_str();
-            }
             //Disabled flag, tells if the filter should be applied or not
             //Starts as disabled
             if (nh_->hasParam("disabled"))
                 nh_->getParam("disabled", config->disabled);
             else
                 nh_->setParam("disabled", config->disabled);
-            //Advertise
-            pub = nh_->advertise<PTC>(topic,0);
+            //Downsample_all_data flag, tells if the filter should downsample all 
+            //fields of the pointcloud or just the XYZ
+            if (nh_->hasParam("downsample_all_data"))
+                nh_->getParam("downsample_all_data", config->downsample_all_data);
+            else
+                nh_->setParam("downsample_all_data", config->downsample_all_data);
+            //Leaf sizes X
+            if (nh_->hasParam("leaf_x"))
+                nh_->getParam("leaf_x",config->leaf_x);
+            else
+                nh_->setParam("leaf_x",config->leaf_x);
+            //Leaf sizes Y
+            if (nh_->hasParam("leaf_y"))
+                nh_->getParam("leaf_y",config->leaf_y);
+            else
+                nh_->setParam("leaf_y",config->leaf_y);
+            //Leaf sizes Z
+            if (nh_->hasParam("leaf_z"))
+                nh_->getParam("leaf_z",config->leaf_z);
+            else
+                nh_->setParam("leaf_z",config->leaf_z);
             ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
         /// apply() implementation
@@ -92,41 +102,38 @@ class Publisher : public sm3d::Plugin
                 ROS_WARN_THROTTLE(30,"[%s::%s]\tEmpty input cloud, aborting...",name_.c_str(),__func__);
                 return;
             }
-            //Propagate stream
-            output = *input;
-            output.header.frame_id = input->header.frame_id;
             //Lock config mutex
             ShmHandler::Lock  lock(config->mtx);
             if (config->disabled){
-                //disabled, just copy input into output (already done)
+                //Filter is disabled, just copy input into output
+                output = *input;
                 return;
             }
-            if (topic.compare(config->output_topic.c_str()) != 0){
-                //topic changed
-                pub.shutdown();
-                topic = config->output_topic.c_str();
-                //Re-advertise
-                pub = nh_->advertise<PTC>(topic,0);
-                ROS_INFO("[%s::%s] Advertising to %s",name_.c_str(),__func__,topic.c_str());
-            }
-            pub.publish(output);
+            vg.setLeafSize(config->leaf_x, config->leaf_y, config->leaf_z);
+            vg.setDownsampleAllData(config->downsample_all_data);
+            vg.setInputCloud(input);
+            vg.filter (output);
+            output.header.frame_id = input->header.frame_id;
         }
     protected:
     ///////Members
     //  Configuration in shared memory
-        PublisherConfig *config;
-        ros::Publisher pub;
-        std::string topic;
+        VoxelGridConfig *config;
+        //Pcl VoxelGrid obj
+        pcl::VoxelGrid<PT> vg;
         //clean Rosparams and shared_memory
         void clean()
         {
             nh_->deleteParam("disabled");
-            nh_->deleteParam("output_topic");
-            shm.segment.destroy<PublisherConfig>((name_+"Config").c_str());
+            nh_->deleteParam("downsample_all_data");
+            nh_->deleteParam("leaf_x");
+            nh_->deleteParam("leaf_y");
+            nh_->deleteParam("leaf_z");
+            shm.segment.destroy<VoxelGridConfig>((name_+"Config").c_str());
             ROS_INFO("[%s::%s] CleanUp complete",name_.c_str(),__func__);
         }
 };
 }//ns
-}//ns output
+}//ns filters
 #endif
 

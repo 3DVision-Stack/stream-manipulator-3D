@@ -175,7 +175,7 @@ class CropBox : public sm3d::Plugin
             ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
         /// apply() implementation
-        virtual void apply(PTC::Ptr input, PTC::Ptr &output)
+        virtual void apply(const PTC::Ptr &input, PTC &output)
         {
             if(!input){
                 ROS_WARN_THROTTLE(30,"[%s::%s]\tNo input cloud, aborting...",name_.c_str(),__func__);
@@ -185,13 +185,11 @@ class CropBox : public sm3d::Plugin
                 ROS_WARN_THROTTLE(30,"[%s::%s]\tEmpty input cloud, aborting...",name_.c_str(),__func__);
                 return;
             }
-            if(!output)
-                output=boost::make_shared<PTC>();
             //Lock cropbox config mutex
             ShmHandler::Lock  lock(config->mtx);
             if (config->disabled){
                 //Filter is disabled, just copy input into output
-                output = input;
+                output = *input;
                 return;
             }
             cb.setKeepOrganized(config->organized);
@@ -221,8 +219,8 @@ class CropBox : public sm3d::Plugin
                 config->trans_changed=false;
             }
             cb.setInputCloud(input);
-            cb.filter (*output);
-            output->header.frame_id = input->header.frame_id;
+            cb.filter (output);
+            output.header.frame_id = input->header.frame_id;
         }
         void createMarker(visualization_msgs::Marker &marker)
         {

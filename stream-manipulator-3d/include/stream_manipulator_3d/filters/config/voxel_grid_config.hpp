@@ -28,34 +28,26 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <stream_manipulator_3d/common_ros.h>
-#include <stream_manipulator_3d/stream_manipulator.h>
-#include <signal.h>
+#ifndef _FILTERS_VOXEL_GRID_CONFIG_HPP_
+#define _FILTERS_VOXEL_GRID_CONFIG_HPP_
 
-static sm3d::StreamManipulator *psm3d;
+#include <stream_manipulator_3d/shared_memory_handler.hpp>
 
-void sm3dSigintHandler(int sig)
+namespace sm3d
 {
-    //This will  bring down  everything, removing the  shared memory  via deInit
-    //call, subscriber is also killed inside the same function
-    ROS_INFO("[StreamManipulator] Shutting Down...");
-    psm3d->kill();
-    ROS_INFO("[StreamManipulator] Goodbye!");
-    ros::shutdown();
-}
-
-/*************** MAIN *********************/
-int main (int argc, char *argv[])
+namespace filters
 {
-    std::string node_name("stream_manipulator");
-    ros::init(argc, argv, node_name);//, ros::init_options::NoSigintHandler);
-    sm3d::StreamManipulator node(node_name);
-    node.setPrivNodeHandle("~");
-    node.spawn(50); //Now a node handle exists
-    //We can install our own SIGINT handler
-    psm3d = &node;
-    signal(SIGINT, sm3dSigintHandler);
-    //Blocking Call
-    node.spinMain(50);
-    return 1;
-}
+///VoxelGrid Filter Configuration, this lives in shared memory
+struct VoxelGridConfig
+{
+    boost::interprocess::interprocess_mutex mtx;
+    bool downsample_all_data,disabled;
+    double leaf_x,leaf_y,leaf_z;
+    VoxelGridConfig(): downsample_all_data(true), disabled(true),
+    leaf_x(0.01),leaf_y(0.01),leaf_z(0.01)
+    {}
+};
+}//ns
+}//ns filters
+#endif
+

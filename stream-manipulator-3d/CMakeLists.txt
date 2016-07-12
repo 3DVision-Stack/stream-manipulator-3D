@@ -79,6 +79,7 @@ set(SOURCES
 ################################################################################
 add_library(filter_plugins
     src/filters/cropbox.cpp
+    src/filters/voxel_grid.cpp
     )
 target_link_libraries(filter_plugins ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} rt)
 

@@ -5,6 +5,12 @@
             GUI for sm3d filters/cropbox Plugin
         </description>
     </class>
+    <class name="filter/voxel_grid" type="rqt_sm3d::filters::VoxelGrid"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d filters/voxel_grid Plugin
+        </description>
+    </class>
     <class name="output/publisher" type="rqt_sm3d::output::Publisher"
         base_class_type="rqt_sm3d::Plugin">
         <description>

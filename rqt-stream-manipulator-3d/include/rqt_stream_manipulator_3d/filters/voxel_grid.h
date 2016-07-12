@@ -28,34 +28,40 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <stream_manipulator_3d/common_ros.h>
-#include <stream_manipulator_3d/stream_manipulator.h>
-#include <signal.h>
+#ifndef _RQT_FILTERS_VOXEL_GRID_HPP_
+#define _RQT_FILTERS_VOXEL_GRID_HPP_
 
-static sm3d::StreamManipulator *psm3d;
+#include <stream_manipulator_3d/filters/config/voxel_grid_config.hpp>
+#include <rqt_stream_manipulator_3d/plugin.h>
+#include <ui_voxel_grid.h>
 
-void sm3dSigintHandler(int sig)
+namespace rqt_sm3d
 {
-    //This will  bring down  everything, removing the  shared memory  via deInit
-    //call, subscriber is also killed inside the same function
-    ROS_INFO("[StreamManipulator] Shutting Down...");
-    psm3d->kill();
-    ROS_INFO("[StreamManipulator] Goodbye!");
-    ros::shutdown();
-}
-
-/*************** MAIN *********************/
-int main (int argc, char *argv[])
+namespace filters
 {
-    std::string node_name("stream_manipulator");
-    ros::init(argc, argv, node_name);//, ros::init_options::NoSigintHandler);
-    sm3d::StreamManipulator node(node_name);
-    node.setPrivNodeHandle("~");
-    node.spawn(50); //Now a node handle exists
-    //We can install our own SIGINT handler
-    psm3d = &node;
-    signal(SIGINT, sm3dSigintHandler);
-    //Blocking Call
-    node.spinMain(50);
-    return 1;
-}
+///VoxelGrid Filter GUI
+class VoxelGrid : public rqt_sm3d::Plugin
+{
+    Q_OBJECT
+
+    public:
+        virtual ~VoxelGrid(){}
+        VoxelGrid() : Plugin() {}
+        virtual void init(const std::string &name);
+    protected slots:
+        virtual void onEnableDisable(bool checked);
+        virtual void onLeafXChanged(double val);
+        virtual void onLeafYChanged(double val);
+        virtual void onLeafZChanged(double val);
+        virtual void onDownsampleAllData(bool checked);
+    protected:
+    ///////Members
+    //  Configuration in shared memory
+        typedef sm3d::filters::VoxelGridConfig Config;
+        Config *config;
+        //ui object from file
+        Ui::VoxelGridWidget ui_;
+};
+}//ns
+}//ns filters
+#endif

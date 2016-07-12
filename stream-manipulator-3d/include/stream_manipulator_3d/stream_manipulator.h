@@ -71,8 +71,6 @@ class StreamManipulator: public ROSNode<StreamManipulator>
         void spinMain(const double freq=0);
         virtual ~StreamManipulator();
     protected:
-        //Service callback for srv_get_scene
-        /* bool cb_get_scene(pacman_vision_comm::get_scene::Request& req, pacman_vision_comm::get_scene::Response& res); */
         //init/deinit with ros params
         void init();
         void deInit();
@@ -83,7 +81,7 @@ class StreamManipulator: public ROSNode<StreamManipulator>
         //Create a chain of filters that will process the input stream
         void assembleChain();
         //Check if the chain needs to be updated
-        bool checkChain();
+        inline bool checkChain() const;
         //Main method to apply filters to input stream
         void process();
         //redefine spin and spinOnce
@@ -99,10 +97,14 @@ class StreamManipulator: public ROSNode<StreamManipulator>
         boost::shared_ptr<visualization_msgs::MarkerArray> marks;
         //input from subscriber
         PTC::Ptr input;
+        //output from plugins
+        PTC::Ptr output;
         //stream frame_id
         std::string frame_id;
         //Chain of Plugins as described by chain_description
         std::vector<sm3d::Plugin::Ptr> chain;
+        //Actual Chain description before update
+        std::vector<std::string> old_chain_desc;
         //subscriber
         Subscriber::Ptr sub;
     private:
@@ -124,8 +126,6 @@ class StreamManipulator: public ROSNode<StreamManipulator>
                 named_condition::remove("sm3dCondition");
             }
         } remover;
-        //condition predicate evaluation
-        inline bool chainPred() const {return *chain_changed;}
         //new cloud on strem predicat evaluation
         inline bool streamPred() const {return *new_cloud_in_stream;}
         //protects the stream within the process

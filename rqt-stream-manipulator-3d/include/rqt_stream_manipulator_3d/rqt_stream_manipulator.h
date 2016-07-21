@@ -37,6 +37,7 @@
 #include <ros/package.h>
 #include <string>
 #include <vector>
+#include <deque>
 #include <utility>
 #include <pluginlib/class_loader.h>
 
@@ -46,6 +47,7 @@
 #include <QString>
 #include <QWidget>
 #include <QErrorMessage>
+#include <QTimer>
 
 //Stream manipulator
 #include <stream_manipulator_3d/shared_memory_handler.hpp>
@@ -82,6 +84,8 @@ class StreamManipulator : public rqt_gui_cpp::Plugin
     virtual void onAddPlugin();
     virtual void onClearPlugin();
     virtual void onUpdateChain();
+    virtual void onAddSampleDelay();
+    virtual void onUpdateDelay();
 
     //Members
     protected:
@@ -90,6 +94,10 @@ class StreamManipulator : public rqt_gui_cpp::Plugin
     QErrorMessage *error_; //simple pop-up window to display errors
 
     private:
+    //time Measurements
+    QTimer *timer;
+    QTimer *delay_update_timer;
+    std::deque<long> delays;
     //PluginLib class loader
     pluginlib::ClassLoader<rqt_sm3d::Plugin> plugin_loader;
     //Chain of GUI Plugins as described by chain_description
@@ -101,6 +109,7 @@ class StreamManipulator : public rqt_gui_cpp::Plugin
     ShmHandler::StrVector *chain_description;
     bool *chain_changed;
     bool *disabled;
+    long *delay;
     ShmHandler::String *input_topic;
 };
 }//End namespace

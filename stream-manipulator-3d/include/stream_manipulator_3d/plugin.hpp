@@ -56,7 +56,7 @@ class Plugin
             priv_nh_ = boost::make_shared<ros::NodeHandle>(priv_nh, name);
         }
         virtual inline std::string getName() const {return name_;}
-        virtual void apply(const PTC::Ptr &input, PTC &output)=0;
+        virtual void apply(PTC_Ptr input, PTC_Ptr &output)=0;
         //Default plugin has no marker to publish, overload this method to return
         //true if a child has a marker to publish and it needs to be updated
         virtual bool hasMarker() {return false;}
@@ -68,9 +68,9 @@ class Plugin
     ///////Members
     protected:
         std::string name_;
-        boost::shared_ptr<ros::NodeHandle> priv_nh_;
-        boost::shared_ptr<ros::NodeHandle> nh_;
-        boost::shared_ptr<visualization_msgs::MarkerArray> markers_;
+        ::boost::shared_ptr<ros::NodeHandle> priv_nh_;
+        ::boost::shared_ptr<ros::NodeHandle> nh_;
+        ::boost::shared_ptr<visualization_msgs::MarkerArray> markers_;
         //Shared Memory Handler
         ShmHandler shm;
 };

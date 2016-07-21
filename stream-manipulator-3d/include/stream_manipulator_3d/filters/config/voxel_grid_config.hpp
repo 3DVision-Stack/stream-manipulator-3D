@@ -41,7 +41,7 @@ namespace filters
 struct VoxelGridConfig
 {
     boost::interprocess::interprocess_mutex mtx;
-    bool downsample_all_data,disabled;
+    bool downsample_all_data, disabled;
     double leaf_x,leaf_y,leaf_z;
     VoxelGridConfig(): downsample_all_data(true), disabled(true),
     leaf_x(0.01),leaf_y(0.01),leaf_z(0.01)

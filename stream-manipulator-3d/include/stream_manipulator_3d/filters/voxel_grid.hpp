@@ -34,6 +34,10 @@
 #include <stream_manipulator_3d/plugin.hpp>
 #include <stream_manipulator_3d/filters/config/voxel_grid_config.hpp>
 #include <pcl/filters/voxel_grid.h>
+/* #include <pcl/filters/impl/voxel_grid.hpp> */
+/* #include <pcl/impl/pcl_base.hpp> */
+/* #include <pcl/impl/point_types.hpp> */
+/* #include <pcl/filters/impl/filter.hpp> */
 
 namespace sm3d
 {
@@ -92,7 +96,7 @@ class VoxelGrid : public sm3d::Plugin
             ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
         /// apply() implementation
-        virtual void apply(const PTC::Ptr &input, PTC &output)
+        virtual void apply(PTC_Ptr input, PTC_Ptr &output)
         {
             if(!input){
                 ROS_WARN_THROTTLE(30,"[%s::%s]\tNo input cloud, aborting...",name_.c_str(),__func__);
@@ -106,21 +110,21 @@ class VoxelGrid : public sm3d::Plugin
             ShmHandler::Lock  lock(config->mtx);
             if (config->disabled){
                 //Filter is disabled, just copy input into output
-                output = *input;
+                output = input;
                 return;
             }
+            //Pcl VoxelGrid obj
+            ::pcl::VoxelGrid<PT> vg;
             vg.setLeafSize(config->leaf_x, config->leaf_y, config->leaf_z);
             vg.setDownsampleAllData(config->downsample_all_data);
             vg.setInputCloud(input);
-            vg.filter (output);
-            output.header.frame_id = input->header.frame_id;
+            vg.filter(*output);
+            output->header.frame_id = input->header.frame_id;
         }
     protected:
     ///////Members
     //  Configuration in shared memory
         VoxelGridConfig *config;
-        //Pcl VoxelGrid obj
-        pcl::VoxelGrid<PT> vg;
         //clean Rosparams and shared_memory
         void clean()
         {

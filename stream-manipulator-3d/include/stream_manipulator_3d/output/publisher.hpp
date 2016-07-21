@@ -82,7 +82,7 @@ class Publisher : public sm3d::Plugin
             ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
         /// apply() implementation
-        virtual void apply(const PTC::Ptr &input, PTC &output)
+        virtual void apply(PTC_Ptr input, PTC_Ptr &output)
         {
             if(!input){
                 ROS_WARN_THROTTLE(30,"[%s::%s]\tNo input cloud, aborting...",name_.c_str(),__func__);
@@ -93,8 +93,8 @@ class Publisher : public sm3d::Plugin
                 return;
             }
             //Propagate stream
-            output = *input;
-            output.header.frame_id = input->header.frame_id;
+            output = input;
+            output->header.frame_id = input->header.frame_id;
             //Lock config mutex
             ShmHandler::Lock  lock(config->mtx);
             if (config->disabled){
@@ -109,7 +109,7 @@ class Publisher : public sm3d::Plugin
                 pub = nh_->advertise<PTC>(topic,0);
                 ROS_INFO("[%s::%s] Advertising to %s",name_.c_str(),__func__,topic.c_str());
             }
-            pub.publish(output);
+            pub.publish(*output);
         }
     protected:
     ///////Members

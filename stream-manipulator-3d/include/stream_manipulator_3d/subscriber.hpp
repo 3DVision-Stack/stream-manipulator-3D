@@ -92,7 +92,7 @@ class Subscriber: public ROSNode<Subscriber>
             }
         }
         //////////////////Members
-        PTC::Ptr stream;
+        PTC_Ptr stream;
         ros::Subscriber stream_sub;
         std::string input_topic;
         std::string old_topic;

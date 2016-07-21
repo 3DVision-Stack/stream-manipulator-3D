@@ -55,6 +55,12 @@ namespace rqt_sm3d
         widget_= new QWidget();
         ui_.setupUi(widget_);
         error_ = new QErrorMessage(widget_);
+        timer = new QTimer(this);
+        connect (timer, SIGNAL(timeout()), this, SLOT(onAddSampleDelay()));
+        timer->start(35); //check every 35ms
+        delay_update_timer = new QTimer(this);
+        connect (delay_update_timer, SIGNAL(timeout()), this, SLOT(onUpdateDelay()));
+        delay_update_timer->start(1000); //update every second
         if (context.serialNumber() > 1)
         {
             widget_->setWindowTitle(widget_->windowTitle() + " (" + QString::number(context.serialNumber()) + ")");
@@ -76,7 +82,8 @@ namespace rqt_sm3d
         disabled = shm.segment.find<bool>("disabled").first;
         input_topic = shm.segment.find<ShmHandler::String>("input_topic").first;
         chain_changed = shm.segment.find<bool>("chain_changed").first;
-        if (!chain_description || !disabled || !input_topic || !chain_changed){
+        delay = shm.segment.find<long>("delay").first;
+        if (!chain_description || !disabled || !input_topic || !chain_changed || !delay){
             //Error in loading shared memory, cannot continue
             error_->showMessage("Error in loading Stream Manipulator shared memory. Aborting...");
             context.removeWidget(widget_);
@@ -103,6 +110,10 @@ namespace rqt_sm3d
     void
     StreamManipulator::shutdownPlugin()
     {
+        timer->stop();
+        delay_update_timer->stop();
+        delete timer;
+        delete delay_update_timer;
     }
 
     void
@@ -128,6 +139,49 @@ namespace rqt_sm3d
             QString entry = chain_description->at(i).c_str();
             ui_.description_list->addItem(entry);
         }
+    }
+
+    void
+    StreamManipulator::onAddSampleDelay()
+    {
+        ShmHandler::NamedLock lock(shm.mutex);
+        delays.push_back(*delay);
+        if (delays.size() > 20)
+            delays.pop_front();
+    }
+
+    void
+    StreamManipulator::onUpdateDelay()
+    {
+        long mean(0);
+        if (delays.size() <= 0)
+            return;
+        for (std::size_t i=0; i< delays.size(); ++i)
+        {
+            mean+= delays[i];
+        }
+        mean /= delays.size();
+        QString label ("Delay (ms): ");
+        label.append(QString::number(mean,10));
+        ui_.delayL->setText(label);
+        QString sty ("color:rgb(0,0,0);\nbackground-color:rgb(");
+        long r;
+        long g;
+        if (mean <= 100){
+            g = 255;
+            r = mean*2.55;
+        }
+        else{
+            r = 255;
+            g = -mean*2.55 + 510;
+            if (g<0)
+                g=0;
+        }
+        sty.append(QString::number(r,10));
+        sty.append(",");
+        sty.append(QString::number(g,10));
+        sty.append(",0);");
+        ui_.delayL->setStyleSheet(sty);
     }
 
     void
@@ -353,11 +407,6 @@ namespace rqt_sm3d
         }
     }
 
-    /* void */
-    /* StreamManipulator::onRemovePlugin() */
-    /* { */
-    /*     //TODO */
-    /* } */
 }//End namespace
 
 PLUGINLIB_EXPORT_CLASS(rqt_sm3d::StreamManipulator, rqt_gui_cpp::Plugin)

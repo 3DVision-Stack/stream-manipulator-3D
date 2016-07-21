@@ -110,6 +110,9 @@ StreamManipulator::init()
 
     //init chain_changed
     chain_changed = shm.segment.construct<bool>("chain_changed")(false);
+
+    //init elapsed delay
+    delay = shm.segment.construct<long>("delay")(0);
     ROS_INFO("[StreamManipulator::%s] Initialization complete",__func__);
 }
 
@@ -365,17 +368,20 @@ StreamManipulator::process()
         ROS_WARN_THROTTLE(30,"[StreamManipulator::%s]\tEmpty input cloud, aborting...",__func__);
         return;
     }
+    boost::posix_time::ptime pre = boost::posix_time::microsec_clock::local_time();
     //Lock locally the chain and process it. We dont want an assembleChain while
     //we are processing
     Lock local(mtx_chain);
     for (ChainIter it=chain.begin(); it!=chain.end(); ++it)
     {
         output = boost::make_shared<PTC>();
-        std::cout<<it - chain.begin() <<":a) in "<<input->size()<<" out "<<output->size()<<std::endl<<std::flush;
-        (*it)->apply(input,*output);
-        std::cout<<it - chain.begin() <<":b) in "<<input->size()<<" out "<<output->size()<<std::endl<<std::flush;
+        (*it)->apply(input,output);
         input = output;
     }
+    boost::posix_time::ptime post = boost::posix_time::microsec_clock::local_time();
+    boost::posix_time::time_duration elaps = post - pre;
+    ShmHandler::NamedLock lock(shm.mutex);
+    *delay = elaps.total_milliseconds();
 }
 
 void

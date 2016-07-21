@@ -66,7 +66,7 @@ class StreamManipulator: public ROSNode<StreamManipulator>
     public:
         StreamManipulator(const std::string ns);
         typedef boost::shared_ptr<StreamManipulator> Ptr;
-        typedef  std::vector<sm3d::Plugin::Ptr>::iterator  ChainIter;
+        typedef std::vector<sm3d::Plugin::Ptr>::iterator  ChainIter;
         //Redefined main spin
         void spinMain(const double freq=0);
         virtual ~StreamManipulator();
@@ -96,9 +96,9 @@ class StreamManipulator: public ROSNode<StreamManipulator>
         //marker to publish
         boost::shared_ptr<visualization_msgs::MarkerArray> marks;
         //input from subscriber
-        PTC::Ptr input;
+        PTC_Ptr input;
         //output from plugins
-        PTC::Ptr output;
+        PTC_Ptr output;
         //stream frame_id
         std::string frame_id;
         //Chain of Plugins as described by chain_description
@@ -152,6 +152,9 @@ class StreamManipulator: public ROSNode<StreamManipulator>
         bool *disabled_;
         //Input  topic, for subscriber to recieve input stream
         ShmHandler::String *input_topic;
+        //Measurements of  instant delay  due to processing,  GUI wants  to know
+        //this value
+        long* delay;
 };
 }//namespace
 #endif

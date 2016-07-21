@@ -50,7 +50,7 @@ find_package(catkin REQUIRED COMPONENTS
 #Find Boost
 find_package(Boost REQUIRED)
 #Find PCL
-find_package(PCL COMPONENTS common filters io search REQUIRED)
+find_package(PCL REQUIRED)
 add_definitions(${PCL_DEFINITIONS})
 link_directories(${PCL_LIBRARY_DIRS})
 ##Eigen
@@ -79,7 +79,9 @@ set(SOURCES
 ################################################################################
 add_library(filter_plugins
     src/filters/cropbox.cpp
+    include/stream_manipulator_3d/filters/cropbox.hpp
     src/filters/voxel_grid.cpp
+    include/stream_manipulator_3d/filters/voxel_grid.hpp
     )
 target_link_libraries(filter_plugins ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} rt)
 
@@ -88,6 +90,7 @@ target_link_libraries(filter_plugins ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boos
 ################################################################################
 add_library(output_plugins
     src/output/publisher.cpp
+    include/stream_manipulator_3d/output/publisher.hpp
     )
 target_link_libraries(output_plugins ${catkin_LIBRARIES} ${Boost_LIBRARIES} rt)
 ################################################################################

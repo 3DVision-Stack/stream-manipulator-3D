@@ -35,18 +35,24 @@
 #include <pcl/point_types.h>
 #include <pcl/common/common.h>
 #include <pcl/common/io.h>
+#include <pcl/PointIndices.h>
+#include <pcl/pcl_base.h>
 
 namespace sm3d
 {
 ///Convenient PointCloud Typedefs
-typedef pcl::PointXYZRGB PT; ///< Default point type.
-typedef pcl::PointCloud<pcl::PointXYZRGB> PTC; ///< Default point cloud with default point type.
+typedef ::pcl::PointXYZRGB PT; ///< Default point type.
+typedef ::pcl::PointCloud<PT> PTC; ///< Default point cloud with default point type.
+typedef ::boost::shared_ptr<PTC> PTC_Ptr; ///< Default point cloud with default point type.
+typedef ::boost::shared_ptr<const PTC> PTC_ConstPtr; ///< Default point cloud with default point type.
 
-typedef pcl::PointXYZ PX; ///< Point type without color
-typedef pcl::PointCloud<pcl::PointXYZ> PXC; ///< Point cloud with PX type
+typedef ::pcl::PointXYZ PX; ///< Point type without color
+typedef ::pcl::PointCloud<PX> PXC; ///< Point cloud with PX type
+typedef ::boost::shared_ptr<PXC> PXC_Ptr; ///< Point cloud with PX type
 
-typedef pcl::PointXYZRGBA PTA; ///< Point with color and alpha
-typedef pcl::PointCloud<PTA> PTAC;
+typedef ::pcl::PointXYZRGBA PTA; ///< Point with color and alpha
+typedef ::pcl::PointCloud<PTA> PTAC;
+typedef ::boost::shared_ptr<PTAC> PTAC_Ptr;
 
 }//namespace
 #endif

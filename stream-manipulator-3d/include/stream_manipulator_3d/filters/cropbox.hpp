@@ -175,7 +175,7 @@ class CropBox : public sm3d::Plugin
             ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
         /// apply() implementation
-        virtual void apply(const PTC::Ptr &input, PTC &output)
+        virtual void apply(PTC_Ptr input, PTC_Ptr &output)
         {
             if(!input){
                 ROS_WARN_THROTTLE(30,"[%s::%s]\tNo input cloud, aborting...",name_.c_str(),__func__);
@@ -189,7 +189,7 @@ class CropBox : public sm3d::Plugin
             ShmHandler::Lock  lock(config->mtx);
             if (config->disabled){
                 //Filter is disabled, just copy input into output
-                output = *input;
+                output = input;
                 return;
             }
             cb.setKeepOrganized(config->organized);
@@ -219,8 +219,8 @@ class CropBox : public sm3d::Plugin
                 config->trans_changed=false;
             }
             cb.setInputCloud(input);
-            cb.filter (output);
-            output.header.frame_id = input->header.frame_id;
+            cb.filter (*output);
+            output->header.frame_id = input->header.frame_id;
         }
         void createMarker(visualization_msgs::Marker &marker)
         {
@@ -328,11 +328,11 @@ class CropBox : public sm3d::Plugin
     //  Configuration in shared memory
         CropBoxConfig *config;
         //Pcl cropbox obj
-        pcl::CropBox<PT> cb;
+        ::pcl::CropBox<PT> cb;
         //Stored CropBox transform
-        Eigen::Matrix4f t_matrix;
+        ::Eigen::Matrix4f t_matrix;
         //and limits
-        Eigen::Vector4f min,max;
+        ::Eigen::Vector4f min,max;
         //clean Rosparams and shared_memory
         void clean()
         {

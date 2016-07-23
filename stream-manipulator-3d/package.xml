@@ -66,6 +66,7 @@
   <depend>roscpp</depend>
   <depend>roslib</depend>
   <depend>visualization_msgs</depend>
+  <depend>cmake_modules</depend>
 
   <exec_depend>message_runtime</exec_depend>
 

@@ -89,7 +89,14 @@ qt4_wrap_ui(PLUGIN_LIBRARY_UI_H ${PLUGIN_LIBRARY_UI})
 catkin_package(
     INCLUDE_DIRS ${rqt_sm3d_INCLUDE_DIRECTORIES}
     LIBRARIES ${PROJECT_NAME} ${PLUGIN_LIBRARY}
-    CATKIN_DEPENDS pluginlib roscpp rqt_gui rqt_gui_cpp roslib stream_manipulator_3d
+    CATKIN_DEPENDS
+        pluginlib
+        roscpp
+        rqt_gui
+        rqt_gui_cpp
+        roslib
+        cmake_modules
+        stream_manipulator_3d
 #  DEPENDS system_lib
 )
 ###########

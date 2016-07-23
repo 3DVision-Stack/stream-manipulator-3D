@@ -117,6 +117,7 @@ catkin_package(
     roslib
     sensor_msgs
     visualization_msgs
+    cmake_modules
     message_runtime
   DEPENDS
     Boost
@@ -136,10 +137,7 @@ add_executable(stream_manipulator_3d ${SOURCES})
 
 target_link_libraries(stream_manipulator_3d
     ${catkin_LIBRARIES}
-    ${PCL_COMMON_LIBRARIES}
-    ${PCL_FILTERS_LIBRARIES}
-    ${PCL_SEARCH_LIBRARIES}
-    ${PCL_IO_LIBRARIES}
+    ${PCL_LIBRARIES}
     ${Boost_LIBRARIES}
     ${Eigen_LIBRARIES}
     rt

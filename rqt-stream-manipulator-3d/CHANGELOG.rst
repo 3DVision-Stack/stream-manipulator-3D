@@ -2,8 +2,8 @@
 Changelog for package rqt_stream_manipulator_3d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.4 (2016-07-23)
+------------------
 * Fix build errors
   Add proper catkin dependencies
 * Contributors: Federico Spinelli

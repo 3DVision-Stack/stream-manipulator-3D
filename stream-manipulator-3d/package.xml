@@ -39,7 +39,7 @@
 -->
 <package format="2">
   <name>stream_manipulator_3d</name>
-  <version>0.1.3</version>
+  <version>0.1.4</version>
   <description>
       Stream Manipulator 3D let's you subscribe to a stream of point
       clouds, such as those coming from sensors, and manipulate it 

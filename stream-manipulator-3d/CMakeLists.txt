@@ -43,6 +43,8 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_conversions
   roscpp
   roslib
+  rosconsole
+  pcl_ros
   sensor_msgs
   visualization_msgs
   cmake_modules
@@ -115,7 +117,9 @@ catkin_package(
     pcl_conversions
     pluginlib
     roscpp
+    rosconsole
     roslib
+    pcl_ros
     sensor_msgs
     visualization_msgs
     cmake_modules

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>rqt_stream_manipulator_3d</name>
-  <version>0.1.4</version>
+  <version>0.1.5</version>
   <description>
       The rqt_stream_manipulator_3d provides a GUI to the stream_manipulator_3d
       package, in order to dynamically reconfigure it.

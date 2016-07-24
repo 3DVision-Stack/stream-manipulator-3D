@@ -46,6 +46,7 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   visualization_msgs
   cmake_modules
+  tf
   )
 #Find Boost
 find_package(Boost REQUIRED)
@@ -119,6 +120,7 @@ catkin_package(
     visualization_msgs
     cmake_modules
     message_runtime
+    tf
   DEPENDS
     Boost
     Eigen

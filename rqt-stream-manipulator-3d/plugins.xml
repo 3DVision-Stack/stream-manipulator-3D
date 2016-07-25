@@ -11,6 +11,24 @@
             GUI for sm3d filters/voxel_grid Plugin
         </description>
     </class>
+    <class name="filter/frustum_culling" type="rqt_sm3d::filters::Frustum"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d filters/frustum_culling Plugin
+        </description>
+    </class>
+    <class name="filter/median" type="rqt_sm3d::filters::Median"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d filters/median Plugin
+        </description>
+    </class>
+    <class name="filter/passthrough" type="rqt_sm3d::filters::PassThrough"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d filters/passthrough Plugin
+        </description>
+    </class>
     <class name="output/publisher" type="rqt_sm3d::output::Publisher"
         base_class_type="rqt_sm3d::Plugin">
         <description>

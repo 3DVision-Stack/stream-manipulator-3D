@@ -54,17 +54,26 @@ set(PLUGIN_LIBRARY_HDR
     include/rqt_stream_manipulator_3d/filters/cropbox.h
     include/rqt_stream_manipulator_3d/filters/voxel_grid.h
     include/rqt_stream_manipulator_3d/output/publisher.h
+    include/rqt_stream_manipulator_3d/filters/frustum.h
+    include/rqt_stream_manipulator_3d/filters/median.h
+    include/rqt_stream_manipulator_3d/filters/passthrough.h
     )
 
 set(PLUGIN_LIBRARY_SRC
     src/filters/cropbox.cpp
     src/filters/voxel_grid.cpp
+    src/filters/frustum.cpp
+    src/filters/median.cpp
+    src/filters/passthrough.cpp
     src/output/publisher.cpp
     )
 
 set(PLUGIN_LIBRARY_UI
     src/filters/cropbox.ui
+    src/filters/median.ui
     src/filters/voxel_grid.ui
+    src/filters/frustum.ui
+    src/filters/passthrough.ui
     src/output/publisher.ui
     )
 

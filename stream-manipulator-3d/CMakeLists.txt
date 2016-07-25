@@ -85,6 +85,12 @@ add_library(filter_plugins
     include/stream_manipulator_3d/filters/cropbox.hpp
     src/filters/voxel_grid.cpp
     include/stream_manipulator_3d/filters/voxel_grid.hpp
+    src/filters/frustum.cpp
+    include/stream_manipulator_3d/filters/frustum.hpp
+    src/filters/median.cpp
+    include/stream_manipulator_3d/filters/median.hpp
+    src/filters/passthrough.cpp
+    include/stream_manipulator_3d/filters/passthrough.hpp
     )
 target_link_libraries(filter_plugins ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} rt)
 

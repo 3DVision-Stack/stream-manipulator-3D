@@ -2,8 +2,8 @@
 Changelog for package rqt_stream_manipulator_3d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.6 (2016-07-29)
+------------------
 * Add some more Plugins:
   * Frustum Culling Filter Plugin
   Removes everything inside/outside a frustum,  defined by two aperture angles and

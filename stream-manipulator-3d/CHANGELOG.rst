@@ -2,6 +2,30 @@
 Changelog for package stream_manipulator_3d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* Add some more Plugins:
+  * Frustum Culling Filter Plugin
+  Removes everything inside/outside a frustum,  defined by two aperture angles and
+  two parallel planes.
+  * Median Filter Plugin
+  The  median filter  is  one of  the simplest  and  wide-spread image  processing
+  filters. It is known to perform  well with "shot"/impulse noise (some individual
+  pixels having extreme  values), it does not reduce contrast  across steps in the
+  function  (as compared  to filters  based  on averaging),  and it  is robust  to
+  outliers. Furthermore, it is simple to implement and efficient, as it requires a
+  single pass over  the image. It consists  of a moving window of  fixed size that
+  replaces the pixel in the center with the median inside the window.
+  NOTE: This filters  only the depth (z-component) of  organized and untransformed
+  (i.e., in  camera coordinates) point  clouds. An error  will be outputted  if an
+  unorganized cloud is given.
+  * PassThrough Filter Plugin
+  PassThrough passes  points in a  cloud based  on constraints for  one particular
+  field of the  point type. Iterates through the entire  input once, automatically
+  filtering non-finite points and the points outside the interval specified by the
+  filter limits, which applies only to the field specified by field type.
+* Contributors: Federico Spinelli
+
 0.1.4 (2016-07-23)
 ------------------
 * Fix build errors

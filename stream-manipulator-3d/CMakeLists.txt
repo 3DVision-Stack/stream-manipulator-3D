@@ -91,6 +91,10 @@ add_library(filter_plugins
     include/stream_manipulator_3d/filters/median.hpp
     src/filters/passthrough.cpp
     include/stream_manipulator_3d/filters/passthrough.hpp
+    src/filters/statistical_outlier.cpp
+    include/stream_manipulator_3d/filters/statistical_outlier.hpp
+    src/filters/radius_outlier.cpp
+    include/stream_manipulator_3d/filters/radius_outlier.hpp
     )
 target_link_libraries(filter_plugins ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${Boost_LIBRARIES} rt)
 

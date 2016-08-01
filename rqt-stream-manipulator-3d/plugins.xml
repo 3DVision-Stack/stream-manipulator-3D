@@ -23,6 +23,18 @@
             GUI for sm3d filters/median Plugin
         </description>
     </class>
+    <class name="filter/radius_outlier_removal" type="rqt_sm3d::filters::RadiusOutlier"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d filters/radius_outlier_removal Plugin
+        </description>
+    </class>
+    <class name="filter/statistical_outlier_removal" type="rqt_sm3d::filters::StatisticalOutlier"
+        base_class_type="rqt_sm3d::Plugin">
+        <description>
+            GUI for sm3d filters/statistical_outlier_removal Plugin
+        </description>
+    </class>
     <class name="filter/passthrough" type="rqt_sm3d::filters::PassThrough"
         base_class_type="rqt_sm3d::Plugin">
         <description>

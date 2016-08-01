@@ -57,6 +57,8 @@ set(PLUGIN_LIBRARY_HDR
     include/rqt_stream_manipulator_3d/filters/frustum.h
     include/rqt_stream_manipulator_3d/filters/median.h
     include/rqt_stream_manipulator_3d/filters/passthrough.h
+    include/rqt_stream_manipulator_3d/filters/statistical_outlier.h
+    include/rqt_stream_manipulator_3d/filters/radius_outlier.h
     )
 
 set(PLUGIN_LIBRARY_SRC
@@ -65,6 +67,8 @@ set(PLUGIN_LIBRARY_SRC
     src/filters/frustum.cpp
     src/filters/median.cpp
     src/filters/passthrough.cpp
+    src/filters/statistical_outlier.cpp
+    src/filters/radius_outlier.cpp
     src/output/publisher.cpp
     )
 
@@ -74,6 +78,8 @@ set(PLUGIN_LIBRARY_UI
     src/filters/voxel_grid.ui
     src/filters/frustum.ui
     src/filters/passthrough.ui
+    src/filters/statistical_outlier.ui
+    src/filters/radius_outlier.ui
     src/output/publisher.ui
     )
 

@@ -33,6 +33,7 @@
 #include <boost/algorithm/string/split.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/bind.hpp>
+#include <cstdlib>
 
 namespace sm3d
 {
@@ -113,159 +114,15 @@ StreamManipulator::init()
 
     //init elapsed delay
     delay = shm.segment.construct<long>("delay")(0);
+    //init load/save flags
+    save = shm.segment.construct<bool>("save")(false);
+    load = shm.segment.construct<bool>("load")(false);
+    load_done = shm.segment.construct<bool>("load_done")(false);
+    //init location (empty string)
+    save_path = shm.segment.construct<ShmHandler::String>("save_location")(shm.char_alloc);
     ROS_INFO("[StreamManipulator::%s] Initialization complete",__func__);
 }
 
-//when service to get scene is called
-/* bool */
-/* BasicNode::cb_get_scene(pacman_vision_comm::get_scene::Request& req, pacman_vision_comm::get_scene::Response& res) */
-/* { */
-/*     //This saves in home... possible todo improvement to let user specify location */
-/*     if (isDisabled()){ */
-/*         ROS_WARN("[BasicNode::%s]\tNode is globally disabled, this service is suspended!",__func__); */
-/*         return false; */
-/*     } */
-/*     if (scene_processed){ */
-/*         sensor_msgs::PointCloud2 msg; */
-/*         if (!req.save.empty()){ */
-/*             pcl::PointCloud<pcl::PointXYZRGBA> cloud; */
-/*             pcl::copyPointCloud(*scene_processed, cloud); */
-/*             if(pcl::io::savePCDFileBinaryCompressed( req.save.c_str(), cloud) == 0) */
-/*                 ROS_INFO("[BasicNode::%s]\tScene Processed saved to %s", __func__, req.save.c_str()); */
-/*             else */
-/*                 ROS_ERROR("[BasicNode::%s]\tFailed to save scene to %s", __func__, req.save.c_str()); */
-/*         } */
-/*         pcl::toROSMsg(*scene_processed, msg); */
-/*         res.scene = msg; */
-/*         return true; */
-/*     } */
-/*     else{ */
-/*         ROS_WARN("[BasicNode::%s]\tNo Scene Processed to send to Service!", __func__); */
-/*         return false; */
-/*     } */
-/* } */
-
-/* void */
-/* BasicNode::remove_outliers(const PTC::ConstPtr source, PTC::Ptr &dest) */
-/* { */
-/*     if (!dest) */
-/*         dest=boost::make_shared<PTC>(); */
-/*     pcl::StatisticalOutlierRemoval<PT> sor; */
-/*     int k; */
-/*     double std_mul; */
-/*     config->get("outliers_mean_k", k); */
-/*     config->get("outliers_std_mul", std_mul); */
-/*     sor.setInputCloud(source); */
-/*     sor.setMeanK(k); */
-/*     sor.setStddevMulThresh(std_mul); */
-/*     sor.filter(*dest); */
-/* } */
-
-/* void */
-/* BasicNode::downsamp_scene(const PTC::ConstPtr source, PTC::Ptr &dest){ */
-/*     //cannot keep organized cloud after voxelgrid */
-/*     if (!dest) */
-/*         dest=boost::make_shared<PTC>(); */
-/*     pcl::VoxelGrid<PT> vg; */
-/*     double leaf; */
-/*     config->get("downsampling_leaf_size", leaf); */
-/*     vg.setLeafSize( leaf, leaf, leaf); */
-/*     vg.setDownsampleAllData(true); */
-/*     vg.setInputCloud (source); */
-/*     vg.filter (*dest); */
-/* } */
-/* void */
-/* BasicNode::segment_scene(const PTC::ConstPtr source, PTC::Ptr &dest) */
-/* { */
-/*     if (!dest) */
-/*         dest=boost::make_shared<PTC>(); */
-/*     pcl::SACSegmentation<PT> seg; */
-/*     pcl::ExtractIndices<PT> extract; */
-/*     //coefficients */
-/*     pcl::PointIndices::Ptr inliers (new pcl::PointIndices); */
-/*     pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients); */
-/*     //plane segmentation */
-/*     seg.setInputCloud(source); */
-/*     seg.setOptimizeCoefficients (true); */
-/*     seg.setModelType (pcl::SACMODEL_PLANE); */
-/*     seg.setMethodType (pcl::SAC_RANSAC); */
-/*     seg.setMaxIterations (100); */
-/*     double tol; */
-/*     config->get("plane_tolerance", tol); */
-/*     seg.setDistanceThreshold (tol); */
-/*     seg.segment(*inliers, *coefficients); */
-/*     //extract what's on top of plane */
-/*     extract.setInputCloud(seg.getInputCloud()); */
-/*     extract.setIndices(inliers); */
-/*     extract.setNegative(true); */
-/*     extract.filter(*dest); */
-/*     //optionally extract  a plane model  for visualization purpose and  create a */
-/*     // marker from it */
-/*     // Disabled, cause broken! */
-/*      * if (config->publish_plane){ */
-/*      *     extract.setNegative(false); */
-/*      *     PTC::Ptr plane (new PTC); */
-/*      *     extract.filter(*plane); */
-/*      *     Eigen::Vector4f min,max; */
-/*      *     pcl::getMinMax3D(*plane, min, max); */
-/*      *     Box limits(min[0],min[1],min[2],max[0],max[1],max[2]); */
-/*      *     create_box_marker(mark_plane, limits, true); */
-/*      *     //make it red */
-/*      *     mark_plane.color.g = 0.0f; */
-/*      *     mark_plane.color.b = 0.0f; */
-/*      *     //name it */
-/*      *     mark_plane.ns="Plane Estimation Model"; */
-/*      *     mark_plane.id=1; */
-/*      *     mark_plane.header.frame_id = dest->header.frame_id; */
-/*      * } */
-/*      *1/ */
-/* } */
-
-// void
-// BasicNode::extract_principal_color(const PTC::ConstPtr scene)
-// {
-//     //for now just compute the mean color...
-//     //in the future we can create some palette and let the user choose
-//     mean_L = mean_a = mean_b = 0.0;
-//     for (const auto& pt: scene->points)
-//     {
-//         double L, a, b;
-//         convertPCLColorToCIELAB(pt, L, a, b);
-//         mean_L += L;
-//         mean_a += a;
-//         mean_b += b;
-//     }
-//     mean_L /= scene->size();
-//     mean_a /= scene->size();
-//     mean_b /= scene->size();
-// }
-
-/* void */
-/* BasicNode::setFilterColor(const double r, const double g, const double b) */
-/* { */
-/*     convertRGBToCIELAB(r,g,b, ref_L, ref_a, ref_b); */
-/* } */
-
-/* void */
-/* BasicNode::apply_color_filter(const PTC::ConstPtr source, PTC::Ptr &dest) */
-/* { */
-/*     if (!dest) */
-/*         dest=boost::make_shared<PTC>(); */
-/*     double thresh; */
-/*     config->get("color_dist_thresh", thresh); */
-/*     for (std::size_t i=0; i< source->size(); ++i) */
-/*     { */
-/*         double L,a,b; */
-/*         convertPCLColorToCIELAB(source->points[i], L,a,b); */
-/*         double dE = deltaE(ref_L, ref_a, ref_b, L,a,b); */
-/*         bool invert(false); */
-/*         config->get("invert_color_filter", invert); */
-/*         if ( dE <= thresh && !invert) */
-/*             dest->push_back(source->points[i]); */
-/*         else if ( dE > thresh && invert) */
-/*             dest->push_back(source->points[i]); */
-/*     } */
-/* } */
 inline bool
 StreamManipulator::checkChain() const
 {
@@ -277,6 +134,7 @@ StreamManipulator::assembleChain()
 {
     if (!nh)
         return;
+    bool modified(false);
     std::vector<sm3d::Plugin::Ptr> tmp_chain;
     //Lock the chain from processing thread
     Lock local(mtx_chain);
@@ -307,12 +165,15 @@ StreamManipulator::assembleChain()
         if (pos != old_chain_desc.end()){
             //Plugin was found, copy it from old chain
             chain[i] = tmp_chain.at(pos - old_chain_desc.begin());
+            if ( (std::size_t)(pos - old_chain_desc.begin()) != i)
+                modified = true;
         }
         else{
             //Plugin not found create it from scratch
             if (plugin_loader.isClassAvailable(desc[1])){
                 chain[i] = plugin_loader.createInstance(desc[1]);
                 chain[i]->init(desc[0], getNodeHandle(), getPrivNodeHandle());
+                modified = true;
             }
             else{
                 ROS_ERROR("[StreamManipulator::%s] Attempted to load %s Plugin, but it does not exists...",__func__,desc[1].c_str());
@@ -334,7 +195,8 @@ StreamManipulator::assembleChain()
     for (std::size_t i=0; i<chain_description->size(); ++i)
         old_chain_desc.push_back(chain_description->at(i).c_str());
     marks.reset();
-    ROS_INFO("[StreamManipulator::%s] Chain assembled",__func__);
+    if (modified)
+        ROS_INFO("[StreamManipulator::%s] Chain assembled",__func__);
 }
 
 void
@@ -356,14 +218,17 @@ StreamManipulator::process()
         {
             //someone notified during the wait, or predicate was set before the wait
             *new_cloud_in_stream = false;
-            input = sub->stream;
-            sub->stream.reset();
-            frame_id = input->header.frame_id;
+            if (sub->stream){
+                input = sub->stream;
+                frame_id = input->header.frame_id;
+            }
         }
         else
-            //nothing new
+            //nothing new to process
             return;
     }
+    if (!input)
+        return;
     if(input->empty()){
         ROS_WARN_THROTTLE(30,"[StreamManipulator::%s]\tEmpty input cloud, aborting...",__func__);
         return;
@@ -433,6 +298,78 @@ StreamManipulator::assembleMarkers()
 }
 
 void
+StreamManipulator::loadConfigFromRosParams()
+{
+    ShmHandler::NamedLock lock (shm.mutex);
+    if (nh->hasParam("chain_description")){
+        std::vector<std::string> c_d;
+        nh->getParam("chain_description",c_d);
+        //write shared memory
+        chain_description->clear();
+        for(size_t i=0; i< c_d.size(); ++i){
+            ShmHandler::String desc(shm.char_alloc);
+            desc = c_d.at(i).c_str();
+            chain_description->push_back(boost::move(desc));
+        }
+    }
+    if (nh->hasParam("disabled"))
+        nh->getParam("disabled", *disabled_);
+    if (nh->hasParam("input_topic")){
+        std::string inp_t;
+        nh->getParam("input_topic", inp_t);
+        *input_topic = inp_t.c_str();
+    }
+    *chain_changed =  true;
+}
+void
+StreamManipulator::reconfigAllPluginsFromRosParams()
+{
+    Lock local(mtx_chain);
+    for (ChainIter it=chain.begin(); it!=chain.end(); ++it)
+        (*it)->reconfigFromRosParams();
+}
+void
+StreamManipulator::loadRosParams()
+{
+    std::string command("rosparam load ");
+    {
+        ShmHandler::NamedLock lock (shm.mutex);
+        command += save_path->c_str();
+    }
+    command += " /stream_manipulator";
+    std::system(command.c_str());
+}
+void
+StreamManipulator::dumpRosParams()
+{
+    std::string command("rosparam dump ");
+    {
+        ShmHandler::NamedLock lock (shm.mutex);
+        command += save_path->c_str();
+    }
+    command += " /stream_manipulator";
+    std::system(command.c_str());
+}
+void
+StreamManipulator::saveConfigToRosParams()
+{
+    {
+        ShmHandler::NamedLock lock (shm.mutex);
+        std::vector<std::string> c_d;
+        for (std::size_t i=0; i< chain_description->size(); ++i)
+            c_d.push_back(chain_description->at(i).c_str());
+        nh->setParam("chain_description", c_d);
+        nh->setParam("disabled", *disabled_);
+        std::string inp_t (input_topic->c_str());
+        nh->setParam("input_topic",inp_t);
+    }
+    //We are reading the chain, thus we have to lock it
+    Lock local(mtx_chain);
+    for (ChainIter it=chain.begin(); it!=chain.end(); ++it)
+        (*it)->saveConfigToRosParams();
+}
+
+void
 StreamManipulator::spinOnce()
 {
     process();
@@ -463,16 +400,39 @@ StreamManipulator::spinMain(const double freq)
             //pass input topic to subscriber
             sub->input_topic = input_topic->c_str();
         }
+        if (*load){
+            //load config file into rosparams
+            loadRosParams();
+            //load rosparams into config
+            loadConfigFromRosParams();
+        }
+        if (checkChain())
+            assembleChain();
         if (!isDisabled()){
             if (!sub->isRunning())
                 sub->spawn(50);
-            if (checkChain())
-                assembleChain();
             assembleMarkers();
             publishMarkers();
         }
         else if (sub->isRunning())
             sub->kill();
+        if (*load){
+            //Reconfigure all Plugins based on RosParams
+            reconfigAllPluginsFromRosParams();
+            ShmHandler::NamedLock lock(shm.mutex);
+            *load = false;
+            *load_done = true;
+            ROS_INFO("[StreamManipulator::%s] Loading from %s, completed",__func__, save_path->c_str());
+        }
+        if (*save){
+            //Dump configuration on RosParams
+            saveConfigToRosParams();
+            //Save Rosparams into file
+            dumpRosParams();
+            ShmHandler::NamedLock lock(shm.mutex);
+            *save = false;
+            ROS_INFO("[StreamManipulator::%s] Saving to %s, completed",__func__, save_path->c_str());
+        }
         ros::spinOnce();
         main_rate.sleep();
     }

@@ -155,6 +155,19 @@ class StreamManipulator: public ROSNode<StreamManipulator>
         //Measurements of  instant delay  due to processing,  GUI wants  to know
         //this value
         long* delay;
+        //Save/Load Notifiers from GUI
+        bool *save;
+        bool *load;
+        bool *load_done;
+        //Save location, also holding location of last save
+        ShmHandler::String *save_path;
+
+        //Load/Save Configuration helpers
+        void loadConfigFromRosParams();
+        void reconfigAllPluginsFromRosParams();
+        void saveConfigToRosParams();
+        void dumpRosParams();
+        void loadRosParams();
 };
 }//namespace
 #endif

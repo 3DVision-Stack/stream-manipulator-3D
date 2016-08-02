@@ -66,8 +66,8 @@ class StreamManipulator : public rqt_gui_cpp::Plugin
     StreamManipulator();
     virtual void initPlugin(qt_gui_cpp::PluginContext& context);
     virtual void shutdownPlugin();
-    virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const;
-    virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings);
+    /* virtual void saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const; */
+    /* virtual void restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings); */
 
     protected:
     virtual void getPlugins();
@@ -86,6 +86,9 @@ class StreamManipulator : public rqt_gui_cpp::Plugin
     virtual void onUpdateChain();
     virtual void onAddSampleDelay();
     virtual void onUpdateDelay();
+    virtual void onSaveConfig();
+    virtual void onLoadConfig();
+    virtual void onPauseResume(bool checked);
 
     //Members
     protected:
@@ -111,6 +114,8 @@ class StreamManipulator : public rqt_gui_cpp::Plugin
     bool *disabled;
     long *delay;
     ShmHandler::String *input_topic;
+    bool *save, *load, *load_done;
+    ShmHandler::String *save_path;
 };
 }//End namespace
 #endif

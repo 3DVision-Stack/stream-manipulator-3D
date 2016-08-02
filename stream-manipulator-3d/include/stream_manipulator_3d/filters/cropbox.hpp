@@ -71,10 +71,20 @@ class CropBox : public sm3d::Plugin
             //Create config in shared_memory
             config = shm.segment.construct<CropBoxConfig>((name_+"Config").c_str())();
 
+            //////////////Init Parameters///////////////////////////////////////
+            reconfigFromRosParams();
+
+            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+
+        virtual void reconfigFromRosParams()
+        {
+            //Here we decided that if user forgot to set some parameters, we set
+            //them for him with defaults.
+
             //Lock the mutex to create parameters in shared memory (and in Rosparams)
             ShmHandler::Lock  lock(config->mtx);
 
-            //////////////Init Parameters///////////////////////////////////////
             //Organized Flag, keeps point cloud organized when possible
             if (nh_->hasParam("organized"))
                 nh_->getParam("organized", config->organized);
@@ -111,6 +121,7 @@ class CropBox : public sm3d::Plugin
                     config->lim_x2 = lim[3];
                     config->lim_y2 = lim[4];
                     config->lim_z2 = lim[5];
+                    config->lim_changed = true;
                 }
             }
             else{
@@ -139,6 +150,7 @@ class CropBox : public sm3d::Plugin
                     config->tx = t[4];
                     config->ty = t[5];
                     config->tz = t[6];
+                    config->trans_changed = true;
                 }
             }
             else{
@@ -172,8 +184,42 @@ class CropBox : public sm3d::Plugin
                 c[2]=config->color_b;
                 nh_->setParam("marker_color",c);
             }
-            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
+        virtual void saveConfigToRosParams()
+        {
+            //Lock the mutex to create parameters in shared memory (and in Rosparams)
+            ShmHandler::Lock  lock(config->mtx);
+            nh_->setParam("organized", config->organized);
+            nh_->setParam("negative", config->negative);
+            nh_->setParam("pub_marker", config->pub_marker);
+            nh_->setParam("disabled", config->disabled);
+            std::vector<double> lim;
+            lim.resize(6);
+            lim[0]=config->lim_x1;
+            lim[1]=config->lim_y1;
+            lim[2]=config->lim_z1;
+            lim[3]=config->lim_x2;
+            lim[4]=config->lim_y2;
+            lim[5]=config->lim_z2;
+            nh_->setParam("limits",lim);
+            std::vector<double> t;
+            t.resize(7);
+            t[0]=config->qw;
+            t[1]=config->qx;
+            t[2]=config->qy;
+            t[3]=config->qz;
+            t[4]=config->tx;
+            t[5]=config->ty;
+            t[6]=config->tz;
+            nh_->setParam("transform", t);
+            std::vector<double> c;
+            c.resize(3);
+            c[0]=config->color_r;
+            c[1]=config->color_g;
+            c[2]=config->color_b;
+            nh_->setParam("marker_color",c);
+        }
+
         /// apply() implementation
         virtual void apply(PTC_Ptr input, PTC_Ptr &output)
         {

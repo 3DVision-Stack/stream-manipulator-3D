@@ -58,7 +58,13 @@ class Publisher : public sm3d::Plugin
             //Then do our specific configuration
             //Create config in shared_memory
             config = shm.segment.construct<PublisherConfig>((name_+"Config").c_str())(shm.char_alloc);
-
+            reconfigFromRosParams();
+            //Advertise
+            pub = nh_->advertise<PTC>(topic,0);
+            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void reconfigFromRosParams()
+        {
             //Lock the mutex to create parameters in shared memory (and in Rosparams)
             ShmHandler::Lock  lock(config->mtx);
 
@@ -77,9 +83,13 @@ class Publisher : public sm3d::Plugin
                 nh_->getParam("disabled", config->disabled);
             else
                 nh_->setParam("disabled", config->disabled);
-            //Advertise
-            pub = nh_->advertise<PTC>(topic,0);
-            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void saveConfigToRosParams()
+        {
+            //Lock the mutex to create parameters in shared memory (and in Rosparams)
+            ShmHandler::Lock  lock(config->mtx);
+            nh_->setParam("output_topic", config->output_topic.c_str());
+            nh_->setParam("disabled", config->disabled);
         }
         /// apply() implementation
         virtual void apply(PTC_Ptr input, PTC_Ptr &output)

@@ -58,10 +58,13 @@ class Median : public sm3d::Plugin
             //Then do our specific configuration
             //Create config in shared_memory
             config = shm.segment.construct<MedianConfig>((name_+"Config").c_str())();
-
+            reconfigFromRosParams();
+            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void reconfigFromRosParams()
+        {
             //Lock the mutex to create parameters in shared memory (and in Rosparams)
             ShmHandler::Lock  lock(config->mtx);
-
             //Disabled flag, tells if the filter should be applied or not
             //Starts as disabled
             if (nh_->hasParam("disabled"))
@@ -78,8 +81,17 @@ class Median : public sm3d::Plugin
                 nh_->getParam("window_size",config->w_size);
             else
                 nh_->setParam("window_size",config->w_size);
-            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
+        virtual void saveConfigToRosParams()
+        {
+            //Lock the mutex to create parameters in shared memory (and in Rosparams)
+            ShmHandler::Lock  lock(config->mtx);
+            nh_->setParam("disabled", config->disabled);
+            nh_->setParam("max_allowed_movement", config->max_move);
+            nh_->setParam("window_size",config->w_size);
+
+        }
+
         /// apply() implementation
         virtual void apply(PTC_Ptr input, PTC_Ptr &output)
         {

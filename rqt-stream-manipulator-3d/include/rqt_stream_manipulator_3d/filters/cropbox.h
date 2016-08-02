@@ -60,6 +60,9 @@ class CropBox : public rqt_sm3d::Plugin
         virtual void onQXChanged(double val);
         virtual void onQYChanged(double val);
         virtual void onQZChanged(double val);
+        virtual void onTXChanged(double val);
+        virtual void onTYChanged(double val);
+        virtual void onTZChanged(double val);
         virtual void onNegative(bool checked);
         virtual void onPubMarks(bool checked);
         virtual void onOrganized(bool checked);

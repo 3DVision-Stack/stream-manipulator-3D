@@ -68,6 +68,11 @@ class Frustum : public sm3d::Plugin
             //Create config in shared_memory
             config = shm.segment.construct<FrustumConfig>((name_+"Config").c_str())();
 
+            reconfigFromRosParams();
+            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void reconfigFromRosParams()
+        {
             //Lock the mutex to create parameters in shared memory (and in Rosparams)
             ShmHandler::Lock  lock(config->mtx);
 
@@ -95,8 +100,6 @@ class Frustum : public sm3d::Plugin
                 nh_->getParam("disabled", config->disabled);
             else
                 nh_->setParam("disabled", config->disabled);
-            nh_->deleteParam("near_plane_distance");
-            nh_->deleteParam("far_plane_distance");
             //Frustum angles
             if (nh_->hasParam("horizontal_field_of_view"))
                 nh_->getParam("horizontal_field_of_view",config->h_fov);
@@ -138,8 +141,27 @@ class Frustum : public sm3d::Plugin
                 c[2]=config->color_b;
                 nh_->setParam("marker_color",c);
             }
-            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
         }
+        virtual void saveConfigToRosParams()
+        {
+            //Lock the mutex to create parameters in shared memory (and in Rosparams)
+            ShmHandler::Lock  lock(config->mtx);
+            nh_->setParam("organized", config->organized);
+            nh_->setParam("negative", config->negative);
+            nh_->setParam("pub_marker", config->pub_marker);
+            nh_->setParam("disabled", config->disabled);
+            nh_->setParam("horizontal_field_of_view",config->h_fov);
+            nh_->setParam("vertical_field_of_view",config->v_fov);
+            nh_->setParam("near_plane_distance",config->n_dist);
+            nh_->setParam("far_plane_distance",config->f_dist);
+            std::vector<double> c;
+            c.resize(3);
+            c[0]=config->color_r;
+            c[1]=config->color_g;
+            c[2]=config->color_b;
+            nh_->setParam("marker_color",c);
+        }
+
         /// apply() implementation
         virtual void apply(PTC_Ptr input, PTC_Ptr &output)
         {
@@ -278,7 +300,6 @@ class Frustum : public sm3d::Plugin
             marker.points.push_back(pf);
             config->mark_changed = false;
         }
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     protected:
     ///////Members
     //  Configuration in shared memory

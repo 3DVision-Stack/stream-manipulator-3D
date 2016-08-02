@@ -56,6 +56,6 @@ int main (int argc, char *argv[])
     psm3d = &node;
     signal(SIGINT, sm3dSigintHandler);
     //Blocking Call
-    node.spinMain(50);
+    node.spinMain(10);
     return 1;
 }

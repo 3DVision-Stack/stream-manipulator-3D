@@ -65,7 +65,6 @@ class Subscriber: public ROSNode<Subscriber>
         void deInit()
         {
             old_topic.clear();
-            stream.reset();
             ROS_INFO("[%s::%s] CleanUp complete",nh->getUnresolvedNamespace().c_str(),__func__);
         }
         void cb_stream(const sensor_msgs::PointCloud2::ConstPtr &msg)

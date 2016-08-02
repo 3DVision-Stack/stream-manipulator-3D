@@ -65,6 +65,10 @@ class Plugin
         //All plugin must overload an init function
         virtual void init(const std::string &name, const ros::NodeHandle &father_nh,
                 const ros::NodeHandle &priv_nh)=0;
+        //All plugins must be able to reconfigure by reading RosParams
+        virtual void reconfigFromRosParams()=0;
+        //All plugins must be able store their configuration to RosParams
+        virtual void saveConfigToRosParams()=0;
     ///////Members
     protected:
         std::string name_;

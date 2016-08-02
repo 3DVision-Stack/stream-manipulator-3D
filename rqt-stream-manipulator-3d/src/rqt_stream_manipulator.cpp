@@ -38,6 +38,7 @@
 #include <boost/filesystem.hpp>
 #include <tinyxml.h>
 #include <ros/master.h>
+#include <cstdlib>
 
 namespace rqt_sm3d
 {
@@ -83,7 +84,12 @@ namespace rqt_sm3d
         input_topic = shm.segment.find<ShmHandler::String>("input_topic").first;
         chain_changed = shm.segment.find<bool>("chain_changed").first;
         delay = shm.segment.find<long>("delay").first;
-        if (!chain_description || !disabled || !input_topic || !chain_changed || !delay){
+        save = shm.segment.find<bool>("save").first;
+        load = shm.segment.find<bool>("load").first;
+        load_done = shm.segment.find<bool>("load_done").first;
+        save_path = shm.segment.find<ShmHandler::String>("save_location").first;
+        if (!chain_description || !disabled || !input_topic || !chain_changed || !delay
+                || !save || !load || !save_path || !load_done){
             //Error in loading shared memory, cannot continue
             error_->showMessage("Error in loading Stream Manipulator shared memory. Aborting...");
             context.removeWidget(widget_);
@@ -105,6 +111,12 @@ namespace rqt_sm3d
         connect(ui_.controlB_del, SIGNAL(pressed()), this, SLOT(onDelPlugin()));
         connect(ui_.descriptionB_clear, SIGNAL(pressed()), this, SLOT(onClearPlugin()));
         connect(ui_.descriptionB_apply, SIGNAL(pressed()), this, SLOT(onUpdateChain()));
+        connect(ui_.mainControlB_save, SIGNAL(pressed()), this, SLOT(onSaveConfig()));
+        connect(ui_.mainControlB_load, SIGNAL(pressed()), this, SLOT(onLoadConfig()));
+        connect(ui_.mainControlB_pause_resume, SIGNAL(clicked(bool)), this, SLOT(onPauseResume(bool)));
+        ShmHandler::NamedLock lock(shm.mutex);
+        ui_.tabWidget->setDisabled(*disabled);
+        ui_.mainControlB_pause_resume->setChecked(*disabled);
     }
 
     void
@@ -117,15 +129,107 @@ namespace rqt_sm3d
     }
 
     void
-    StreamManipulator::saveSettings(qt_gui_cpp::Settings& plugin_settings, qt_gui_cpp::Settings& instance_settings) const
+    StreamManipulator::onSaveConfig()
     {
-        //TODO
+        ui_.mainControlB_save->setDisabled(true);
+        QString filename, last_loc;
+        {
+            ShmHandler::NamedLock lock (shm.mutex);
+            if (save_path->empty())
+                last_loc = std::getenv("HOME");
+            else
+                last_loc = save_path->c_str();
+        }
+        filename = QFileDialog::getSaveFileName(widget_, tr("Save Current Configuration"),
+                last_loc, tr("YAML file (*.yaml)"));
+        if (!filename.isEmpty()){
+            ShmHandler::NamedLock lock (shm.mutex);
+            *save_path = filename.toStdString().c_str();
+            *save = true;
+        }
+        ui_.mainControlB_save->setDisabled(false);
     }
-
     void
-    StreamManipulator::restoreSettings(const qt_gui_cpp::Settings& plugin_settings, const qt_gui_cpp::Settings& instance_settings)
+    StreamManipulator::onLoadConfig()
     {
-        //TODO
+        ui_.mainControlB_load->setDisabled(true);
+        QString filename, last_loc;
+        {
+            ShmHandler::NamedLock lock (shm.mutex);
+            if (save_path->empty())
+                last_loc = std::getenv("HOME");
+            else
+                last_loc = save_path->c_str();
+        }
+        filename = QFileDialog::getOpenFileName(widget_, tr("Save Current Configuration"),
+                last_loc, tr("YAML file (*.yaml)"));
+        if (!filename.isEmpty()){
+            ShmHandler::NamedLock lock (shm.mutex);
+            *save_path = filename.toStdString().c_str();
+            *load = true;
+        }
+        //wait for node to notify load_done
+        if (!filename.isEmpty()){
+            //This will block Qt, it's not that pretty...
+            std::size_t count(0);
+            while (1)
+            {
+                bool done(false);
+                {
+                    ShmHandler::NamedLock lock (shm.mutex);
+                    done = *load_done;
+                }
+                if (done)
+                {
+                    onUpdateTopicList();
+                    fillListWidget();
+                    //Clear old buttons layout
+                    //0 position is the label, we dont remove it ever
+                    for (std::size_t i =1; i < ui_.chainVL->count(); ++i)
+                    {
+                        QLayoutItem *child = ui_.chainVL->itemAt(i);
+                        //Remove until you find the spacer, which is last item, keeping it.
+                        if (child->spacerItem())
+                            break;
+                        else{
+                            ui_.chainVL->removeItem(child);
+                            delete child->widget();
+                            delete child;
+                            --i;
+                        }
+                    }
+                    //Remove old tabs
+                    //0 position is stream_manipulator, we dont touch it
+                    for (std::size_t i=1; i<ui_.tabWidget->count(); ++i)
+                    {
+                        delete ui_.tabWidget->widget(i);
+                        ui_.tabWidget->removeTab(i);
+                        --i;
+                    }
+                    QStringList names;
+                    loadGuiPlugins(names); //names are filled inside here
+                    addTabs(names);
+                    *load_done = false;
+                    break;
+                }
+                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+                ++count;
+                if (count > 30){
+                    //ok we waited 3 seconds... something went wrong
+                    //TODO notify user, loading failed ...
+                    //Let's get out of here, anyway
+                    break;
+                }
+            }
+        }
+        ui_.mainControlB_load->setDisabled(false);
+    }
+    void
+    StreamManipulator::onPauseResume(bool checked)
+    {
+        ui_.tabWidget->setDisabled(checked);
+        ShmHandler::NamedLock lock(shm.mutex);
+        *disabled = checked;
     }
 
     void

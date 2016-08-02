@@ -90,6 +90,9 @@ namespace filters
         connect(ui_.QX, SIGNAL(valueChanged(double)), this, SLOT(onQXChanged(double)));
         connect(ui_.QY, SIGNAL(valueChanged(double)), this, SLOT(onQYChanged(double)));
         connect(ui_.QZ, SIGNAL(valueChanged(double)), this, SLOT(onQZChanged(double)));
+        connect(ui_.TX, SIGNAL(valueChanged(double)), this, SLOT(onTXChanged(double)));
+        connect(ui_.TY, SIGNAL(valueChanged(double)), this, SLOT(onTYChanged(double)));
+        connect(ui_.TZ, SIGNAL(valueChanged(double)), this, SLOT(onTZChanged(double)));
         connect(ui_.pub_markerB, SIGNAL(clicked(bool)), this, SLOT(onPubMarks(bool)));
         connect(ui_.organizedB, SIGNAL(clicked(bool)), this, SLOT(onOrganized(bool)));
         connect(ui_.negativeB, SIGNAL(clicked(bool)), this, SLOT(onNegative(bool)));
@@ -196,6 +199,27 @@ namespace filters
     {
         ShmHandler::Lock  lock(config->mtx);
         config->qz = val;
+        config->trans_changed = true;
+    }
+    void
+    CropBox::onTXChanged(double val)
+    {
+        ShmHandler::Lock  lock(config->mtx);
+        config->tx = val;
+        config->trans_changed = true;
+    }
+    void
+    CropBox::onTYChanged(double val)
+    {
+        ShmHandler::Lock  lock(config->mtx);
+        config->ty = val;
+        config->trans_changed = true;
+    }
+    void
+    CropBox::onTZChanged(double val)
+    {
+        ShmHandler::Lock  lock(config->mtx);
+        config->tz = val;
         config->trans_changed = true;
     }
 

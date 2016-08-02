@@ -58,11 +58,14 @@ class PassThrough : public sm3d::Plugin
             //Then do our specific configuration
             //Create config in shared_memory
             config = shm.segment.construct<PassThroughConfig>((name_+"Config").c_str())();
-
+            //////////////Init Parameters///////////////////////////////////////
+            reconfigFromRosParams();
+            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void reconfigFromRosParams()
+        {
             //Lock the mutex to create parameters in shared memory (and in Rosparams)
             ShmHandler::Lock  lock(config->mtx);
-
-            //////////////Init Parameters///////////////////////////////////////
             //Organized Flag, keeps point cloud organized when possible
             if (nh_->hasParam("organized"))
                 nh_->getParam("organized", config->organized);
@@ -110,7 +113,18 @@ class PassThrough : public sm3d::Plugin
                 nh_->getParam("filter_value",config->new_value);
             else
                 nh_->setParam("filter_value",config->new_value);
-            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void saveConfigToRosParams()
+        {
+            //Lock the mutex to create parameters in shared memory (and in Rosparams)
+            ShmHandler::Lock  lock(config->mtx);
+            nh_->setParam("organized", config->organized);
+            nh_->setParam("negative", config->negative);
+            nh_->setParam("disabled", config->disabled);
+            nh_->setParam("filter_field",config->field);
+            nh_->setParam("filter_lim_min",config->l_min);
+            nh_->setParam("filter_lim_max",config->l_max);
+            nh_->setParam("filter_value",config->new_value);
         }
         /// apply() implementation
         virtual void apply(PTC_Ptr input, PTC_Ptr &output)

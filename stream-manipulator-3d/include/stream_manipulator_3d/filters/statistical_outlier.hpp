@@ -58,7 +58,11 @@ class StatisticalOutlier : public sm3d::Plugin
             //Then do our specific configuration
             //Create config in shared_memory
             config = shm.segment.construct<StatisticalOutlierConfig>((name_+"Config").c_str())();
-
+            reconfigFromRosParams();
+            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void reconfigFromRosParams()
+        {
             //Lock the mutex to create parameters in shared memory (and in Rosparams)
             ShmHandler::Lock  lock(config->mtx);
 
@@ -88,7 +92,16 @@ class StatisticalOutlier : public sm3d::Plugin
                 nh_->getParam("nr_k_neighbors",config->nr_k);
             else
                 nh_->setParam("nr_k_neighbors",config->nr_k);
-            ROS_INFO("[%s::%s] Initialization complete",name_.c_str(),__func__);
+        }
+        virtual void saveConfigToRosParams()
+        {
+            //Lock the mutex to create parameters in shared memory (and in Rosparams)
+            ShmHandler::Lock  lock(config->mtx);
+            nh_->setParam("disabled", config->disabled);
+            nh_->setParam("organized", config->organized);
+            nh_->setParam("negative",config->negative);
+            nh_->setParam("stddev_multiplier",config->stddev_mult);
+            nh_->setParam("nr_k_neighbors",config->nr_k);
         }
         /// apply() implementation
         virtual void apply(PTC_Ptr input, PTC_Ptr &output)

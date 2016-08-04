@@ -2,6 +2,43 @@
 Changelog for package stream_manipulator_3d
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.1.7 (2016-08-04)
+------------------
+* Updates & Bugfixes
+  Bugfix: CropBox not updating Translation properly
+  Add Pause/Resume functionality:
+  - Pause button will block processing and all plugins, it also
+  unsubscribe from input_topic.
+  - Resume will resubscribe and resume all normal functionality.
+  - While stream_manipulator_3d is paused you cannot modify configuration
+  or plugin specific settings
+  Add Saving/Loading configuration functionality:
+  - Saving config to rosparams and then dumpng to yaml file
+  - Loading yaml file into rosparams, then update configuration from them.
+* Add two more filter plugins
+  * Add Statistical Outlier Removal Plugin
+  Wrapping  of  pcl::StatisticalOutlierRemoval  filter.  StatisticalOutlierRemoval
+  uses  point  neighborhood  statistics  to filter  outlier  data.  The  algorithm
+  iterates through  the entire  input twice:  During the  first iteration  it will
+  compute the average distance that each point has to its nearest k neighbors. The
+  value of k  can be set using  nr_k_neighbors param. Next, the  mean and standard
+  deviation of all  these distances are computed in order  to determine a distance
+  threshold. The distance threshold will be equal to: mean + stddev_mult * stddev.
+  The multiplier  for the  standard deviation can  be set  using stddev_multiplier
+  parameter. During the next iteration the  points will be classified as inlier or
+  outlier if  their average  neighbor distance  is below  or above  this threshold
+  respectively. Outliers will then be removed from the stream. The neighbors found
+  for each query point will be found amongst ALL input points.
+  * Add Radius Outlier Removal Plugin
+  Wrapping  of  pcl::RadiusOutlierRemoval   filter.  RadiusOutlierRemoval  filters
+  points in a cloud  based on the number of neighbors  they have. Iterates through
+  the entire  input once, and  for each point,  retrieves the number  of neighbors
+  within a certain radius.  The point will be considered an outlier  if it has too
+  few neighbors, as determined by  k_neighbors_threshold parameter. The radius can
+  be changed using  radius_search param. The neighbors found for  each query point
+  will be found amongst ALL points of input stream.
+* Contributors: Federico Spinelli
+
 0.1.6 (2016-07-29)
 ------------------
 * Add some more Plugins:
